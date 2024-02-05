@@ -42,6 +42,10 @@ def filter_frequencies(signal, fs, band_mask, n_most_significant):
         The frequencies corresponding to the n most significant peaks in power spectral density.
     - filtered_psd: 1D array
         The power spectral density values corresponding to the n most significant peaks.
+    - filtered_fft: 
+    
+    - new_values: 1D array
+        Array that generates filtered_signal via FFT
     """
 
     # Compute the FFT of the signal
@@ -54,12 +58,14 @@ def filter_frequencies(signal, fs, band_mask, n_most_significant):
     filtered_frequencies = freqs[mask]
     filtered_fft = fft_values[mask]
     print("Filtered frequencies: "+ str(filtered_frequencies))
+
     # Compute power spectral density
     psd = np.abs(filtered_fft) ** 2
 
     # Select the n most significant frequencies
     indices = np.argsort(psd)[-n_most_significant:]
     filtered_frequencies = filtered_frequencies[indices]
+    filtered_fft = filtered_fft[indices]
     filtered_psd = psd[indices]
     
     # Create a filter in the frequency domain
@@ -74,9 +80,9 @@ def filter_frequencies(signal, fs, band_mask, n_most_significant):
     
     filtered_signal = np.fft.ifft(new_values)
 
-    return filtered_signal, filtered_frequencies, filtered_psd, new_values
+    return filtered_signal, filtered_frequencies, filtered_psd, filtered_fft, new_values
 
-def plot_results(original_signal, filtered_signal, freqs, psd, filtered_frequencies, filtered_psd, fs):
+def plot_signals(original_signal, filtered_signal, fs, label):
     """
     Plot the original and filtered signals, as well as the power spectral density.
 
@@ -85,6 +91,31 @@ def plot_results(original_signal, filtered_signal, freqs, psd, filtered_frequenc
         The original input signal.
     - filtered_signal: 1D array-like
         The filtered signal in the specified frequency band.
+    - fs: float
+        sample frequency
+    - label: string
+        label of the plot
+    """
+
+    # Plot the original and filtered signals
+    plt.figure(figsize=(12, 6))
+
+    plt.subplot(1, 1, 1)
+    plt.plot(np.arange(len(original_signal)) / fs, original_signal, label='Original Signal')
+    plt.plot(np.arange(len(filtered_signal)) / fs, filtered_signal, label='Filtered Signal')
+    plt.title('Original and Filtered Signals: ' + label)
+    plt.xlabel('Time (s)')
+    plt.ylabel('Amplitude')
+    plt.legend()
+
+    plt.tight_layout()
+    plt.show()
+
+def plot_spectral_densities(freqs, psd, filtered_frequencies, filtered_psd, fs, label):
+    """
+    Plot the original and filtered signals, as well as the power spectral density.
+
+    Parameters:
     - freqs: 1D array-like
         The frequency values.
     - psd: 1D array-like
@@ -93,24 +124,20 @@ def plot_results(original_signal, filtered_signal, freqs, psd, filtered_frequenc
         The frequencies corresponding to the n most significant peaks in power spectral density.
     - filtered_psd: 1D array-like
         The power spectral density values corresponding to the n most significant peaks.
+    - fs: float
+        sample frequency
+    - label: string
+        label of the plot
     """
 
     # Plot the original and filtered signals
     plt.figure(figsize=(12, 6))
 
-    plt.subplot(2, 1, 1)
-    plt.plot(np.arange(len(original_signal)) / fs, original_signal, label='Original Signal')
-    plt.plot(np.arange(len(filtered_signal)) / fs, filtered_signal, label='Filtered Signal')
-    plt.title('Original and Filtered Signals')
-    plt.xlabel('Time (s)')
-    plt.ylabel('Amplitude')
-    plt.legend()
-
     # Plot the power spectral density
-    plt.subplot(2, 1, 2)
+    plt.subplot(1, 1, 1)
     plt.plot(freqs, psd, label='Original PSD')
     plt.plot(filtered_frequencies, filtered_psd, 'ro', label='Filtered PSD Peaks')
-    plt.title('Power Spectral Density')
+    plt.title('Power Spectral Density - ' + label)
     plt.xlabel('Frequency (Hz)')
     plt.ylabel('Power/Frequency')
     plt.legend()
@@ -157,8 +184,10 @@ def random_resample(original_sample, n_resamples=1000):
     Returns:
     - np.array, resampled data
     """
-    resamples = np.random.choice(original_sample, size=(n_resamples, len(original_sample)), replace=True)
-    return resamples[0]
+
+    resamples = np.random.choice(original_sample, size= n_resamples, replace=True)
+    
+    return resamples
 
 def plot_normalized_histogram(data, bins=100):
     plt.hist(data, bins=bins, density=True, alpha=0.7, color='blue', edgecolor='black')
@@ -168,6 +197,29 @@ def plot_normalized_histogram(data, bins=100):
     plt.title('Normalized Histogram')
     
     plt.show()
+
+def generate_signal(frequencies, fft_coefficients, n, fs):
+    
+    if(len(frequencies) != len(fft_coefficients)):
+        raise Exeption("Inputs must have same size!")
+
+    result = []
+    freq = np.array(frequencies)
+    fft_coef = np.array(fft_coefficients)
+    ## t = np.arange(0, n, 1/fs)  # Time array
+    t = np.linspace(0, n/fs, num=n, endpoint=True, dtype=None, axis=0)
+    element = 0
+
+    for i in t:
+        element = 0
+
+        for j in range(len(frequencies)):
+
+            element += fft_coef[j] * np.exp(1j * 2 * np.pi * freq[j] * i)
+
+        result.append(element)
+    
+    return result
 
 def recursive_binary_search(time_series, test_function, start=None, end=None):
     
