@@ -53,7 +53,7 @@ def filter_frequencies(signal, fs, band_mask, n_most_significant):
     mask = (freqs >= band_mask[0]) & (freqs <= band_mask[1])
     filtered_frequencies = freqs[mask]
     filtered_fft = fft_values[mask]
-    print("Filtered frequencies: "+ str(filtered_frequencies))
+    print(filtered_frequencies)
     # Compute power spectral density
     psd = np.abs(filtered_fft) ** 2
 
@@ -64,7 +64,9 @@ def filter_frequencies(signal, fs, band_mask, n_most_significant):
     
     # Create a filter in the frequency domain
     low_cutoff, high_cutoff = band_mask
-
+    '''
+    fft_values[(freqs < low_cutoff) or (freqs > high_cutoff) or (freqs not in filtered_frequencies)] = 0
+    '''
     new_values = []
     for i in range(len(fft_values)):
         if (freqs[i] < low_cutoff) or (freqs[i] > high_cutoff) or (i in indices):
@@ -74,7 +76,7 @@ def filter_frequencies(signal, fs, band_mask, n_most_significant):
     
     filtered_signal = np.fft.ifft(new_values)
 
-    return filtered_signal, filtered_frequencies, filtered_psd, new_values
+    return filtered_signal, filtered_frequencies, filtered_psd
 
 def plot_results(original_signal, filtered_signal, freqs, psd, filtered_frequencies, filtered_psd, fs):
     """
@@ -117,58 +119,3 @@ def plot_results(original_signal, filtered_signal, freqs, psd, filtered_frequenc
 
     plt.tight_layout()
     plt.show()
-
-def adf_test(time_series, critical_value=0.05):
-    """
-    Perform Augmented Dickey-Fuller test for stationarity.
-
-    Parameters:
-    - time_series: pandas Series or NumPy array, the time series to be tested.
-    - critical_value: float, significance level for the test (default is 0.05).
-
-    Returns:
-    - result: pandas Series, containing test statistics and critical values.
-    - is_stationary: bool, True if the time series is stationary, False otherwise.
-    """
-
-    # Perform Augmented Dickey-Fuller test
-    result = adfuller(time_series)
-    
-    # Extract test statistics and critical values
-    test_statistic = result[0]
-    p_value = result[1]
-    critical_values = result[4]
-    
-    # Check if the test statistic is less than the critical value
-    ## IT IS NEEDED TO CHECK IF THIS DECISION HOLDS TRUE
-    critical_value_at_significance = result[4][str(int(critical_value*100)) + "%"]
-    is_stationary = test_statistic < critical_value_at_significance
-    
-    return result, is_stationary
-
-def random_resample(original_sample, n_resamples=1000):
-    """
-    Perform bootstrap resampling on a one-dimensional sample.
-
-    Parameters:
-    - original_sample: np.array, the original one-dimensional sample
-    - n_resamples: int, the number of resamples to generate
-
-    Returns:
-    - np.array, resampled data
-    """
-    resamples = np.random.choice(original_sample, size=(n_resamples, len(original_sample)), replace=True)
-    return resamples[0]
-
-def plot_normalized_histogram(data, bins=100):
-    plt.hist(data, bins=bins, density=True, alpha=0.7, color='blue', edgecolor='black')
-
-    plt.xlabel('Value')
-    plt.ylabel('Probability Density')
-    plt.title('Normalized Histogram')
-    
-    plt.show()
-
-def recursive_binary_search(time_series, test_function, start=None, end=None):
-    
-    return None
