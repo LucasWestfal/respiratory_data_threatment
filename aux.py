@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.signal import find_peaks
+from statsmodels.tsa.stattools import adfuller
 
 def simulate_data(duration=60, sampling_rate=30):
     """
@@ -191,6 +192,20 @@ def random_resample(original_sample, n_resamples=1000):
     return resamples
 
 def plot_normalized_histogram(data, bins=100):
+    """
+    Automates the simple plotting of an histogram.
+
+    Parameters:
+    - data: np.array
+        The one-dimensional sample
+    - n_resamples: int
+        The number of bins
+
+    Returns:
+    - plot
+    """
+
+
     plt.hist(data, bins=bins, density=True, alpha=0.7, color='blue', edgecolor='black')
 
     plt.xlabel('Value')
@@ -247,6 +262,54 @@ def generate_signal(frequencies, fft_coefficients, n, fs):
     
     return result
 
-def recursive_binary_search(time_series, test_function, start=None, end=None):
+def recursive_binary_TEST(intervals, time_series, a, b, fs):
+
+    if (b-a)/fs<20: # Verify if the interval is less than the mean duration of apnea events (verifying of the number is needed)
+        # If small anough ....
+        intervals.append((a, b, False))
+        return 
     
-    return None
+    _, is_stationary = adf_test(time_series[a:b])    
+    # Check if the test function returns True for the mid element
+    if is_stationary:
+        # If true, return the interval
+        intervals.append((a, b, True))
+        return
+    
+    # Calculate mid index
+    mid = (a + b) // 2
+    
+    # If test function returns False, recursively search in the left and right halves
+    recursive_binary_TEST(intervals, time_series, a, mid, fs)
+    recursive_binary_TEST(intervals, time_series,  mid + 1, b, fs)
+
+    # If not found in either, return
+    return 
+
+def intervals_cleaner(clean_intervals, intervals):
+    
+    i = 0
+    while i < len(intervals)-1:
+    
+        j=i
+        if (intervals[i][2] == True):
+            while(j < len(intervals)-1):
+                if intervals[j+1][2] == False:
+                    break
+                j+=1
+            clean_intervals.append((intervals[i][0], intervals[j][1], True))
+            i = j
+            
+        else:
+            while(j < len(intervals)-1):
+                if intervals[j+1][2] == True:
+                    break
+                j+=1
+            clean_intervals.append((intervals[i][0], intervals[j][1], False))
+            i = j
+        
+        if (i == len(intervals)-1):
+            clean_intervals.append((intervals[i][0], intervals[i][1], intervals[i][2]))
+        
+        i+=1
+    return
