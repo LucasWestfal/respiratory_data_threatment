@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy.signal import find_peaks
 
 def simulate_data(duration=60, sampling_rate=30):
     """
@@ -135,7 +136,7 @@ def plot_spectral_densities(freqs, psd, filtered_frequencies, filtered_psd, fs, 
 
     # Plot the power spectral density
     plt.subplot(1, 1, 1)
-    plt.plot(freqs, psd, label='Original PSD')
+    plt.plot(freqs[:int(freqs.size/2)], psd[:int(freqs.size/2)], label='Original PSD')
     plt.plot(filtered_frequencies, filtered_psd, 'ro', label='Filtered PSD Peaks')
     plt.title('Power Spectral Density - ' + label)
     plt.xlabel('Frequency (Hz)')
@@ -198,6 +199,31 @@ def plot_normalized_histogram(data, bins=100):
     
     plt.show()
 
+def finding_peaks(time_series, fs):
+
+    x = np.linspace(0, int(time_series.size/fs), int(time_series.size))
+    y = time_series  # Adding some noise to the sine wave
+
+    # Find peaks in the data
+    peaks, _ = find_peaks(y)
+
+    # Plot the curve
+    plt.plot(x, y, label='Curve')
+
+    # Highlight the peaks on the plot
+    plt.plot(x[peaks], y[peaks], 'ro', label='Peaks')
+
+    # Add labels and title
+    plt.xlabel('X-axis')
+    plt.ylabel('Y-axis')
+    plt.title('Curve with Peaks - ' + str(len(peaks)) + " peaks")
+
+    # Add legend
+    plt.legend()
+
+    # Show the plot
+    plt.show()
+
 def generate_signal(frequencies, fft_coefficients, n, fs):
     
     if(len(frequencies) != len(fft_coefficients)):
@@ -217,7 +243,7 @@ def generate_signal(frequencies, fft_coefficients, n, fs):
 
             element += fft_coef[j] * np.exp(1j * 2 * np.pi * freq[j] * i)
 
-        result.append(element)
+        result.append(element/(len(t)))
     
     return result
 
