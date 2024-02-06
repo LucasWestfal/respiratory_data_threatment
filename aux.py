@@ -266,14 +266,14 @@ def recursive_binary_TEST(intervals, time_series, a, b, fs):
 
     if (b-a)/fs<20: # Verify if the interval is less than the mean duration of apnea events (verifying of the number is needed)
         # If small anough ....
-        intervals.append((a, b, False))
+        intervals.append((a, b, False, None))
         return 
     
-    _, is_stationary = adf_test(time_series[a:b])    
+    result, is_stationary = adf_test(time_series[a:b])    
     # Check if the test function returns True for the mid element
     if is_stationary:
         # If true, return the interval
-        intervals.append((a, b, True))
+        intervals.append((a, b, True, result[1]))
         return
     
     # Calculate mid index
@@ -288,6 +288,10 @@ def recursive_binary_TEST(intervals, time_series, a, b, fs):
 
 def intervals_cleaner(clean_intervals, intervals):
     
+    '''
+        deprecated!
+    '''
+
     i = 0
     while i < len(intervals)-1:
     
@@ -312,4 +316,40 @@ def intervals_cleaner(clean_intervals, intervals):
             clean_intervals.append((intervals[i][0], intervals[i][1], intervals[i][2]))
         
         i+=1
+    return
+
+def plot_intervals(time_series, intervals, decimals):
+    """
+    Plot time series with intervals.
+
+    Parameters:
+    - time_series (list): List representing the time series.
+    - intervals (list): List of tuples with elements in the format (initial index, final index, boolean, float).
+                        Boolean indicates the color of the interval (1 for blue, 0 for red).
+                        Float is used as the label for the interval.
+    """
+    fig, ax = plt.subplots(figsize=(20, 6))
+
+    # Plot the time series
+    ax.plot(time_series, color='black')
+
+    # Plot intervals
+    for start, end, boolean, label in intervals:
+        color = 'blue' if boolean else 'red'
+        ax.axvspan(start, end, alpha=0.3, color=color)
+        midpoint = (start + end) / 2
+        
+        if label == None:
+            label = ""
+        else: 
+            label = "Pv: " + str(round(label, decimals))
+        
+        ax.text(midpoint, max(time_series), label, ha='center', va='bottom', color='black')
+
+    ax.legend()
+    plt.xlabel('Time Index')
+    plt.ylabel('Value')
+    plt.title('Time Series with Intervals')
+    plt.show()
+    
     return
